@@ -13,30 +13,28 @@ Resources:
     Properties:
       PolicyDocument:
         Version: '2012-10-17'
-        Id: SNSTopicPolicy
+        Id: AllowSESToPublish
         Statement:
           - Effect: Allow
             Principal:
               Service: ses.amazonaws.com
             Action: sns:Publish
             Resource: !Ref SnsTopic
-            Condition:
-              ArnLike:
-                aws:SourceArn: !Sub arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/*
       Topics:
         - !Ref SnsTopic
   SESConfigurationSet:
     Type: AWS::SES::ConfigurationSet
     Properties:
-      Name: SESFeedbackConfigurationSet
+      Name: BaunsConfigurationSet
   SESConfigurationSetEventDestination:
     Type: AWS::SES::ConfigurationSetEventDestination
     Properties:
       ConfigurationSetName: !Ref SESConfigurationSet
       EventDestination:
-        Name: SnsFeedbackDestination
+        Name: BaunsSnsTopic
         Enabled: true
         MatchingEventTypes:
+          - send
           - bounce
           - complaint
           - delivery
