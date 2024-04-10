@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  Token:
+    Type: String
+    Description: Token for Bauns.net Notification URL
+Resources:
+  SnsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: bauns-notifications
+  SnsTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Id: SNSTopicPolicy
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ses.amazonaws.com
+            Action: sns:Publish
+            Resource: !Ref SnsTopic
+            Condition:
+              ArnLike:
+                aws:SourceArn: !Sub arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/*
+      Topics:
+        - !Ref SnsTopic
+  SESConfigurationSet:
+    Type: AWS::SES::ConfigurationSet
+    Properties:
+      Name: SESFeedbackConfigurationSet
+  SESConfigurationSetEventDestination:
+    Type: AWS::SES::ConfigurationSetEventDestination
+    Properties:
+      ConfigurationSetName: !Ref SESConfigurationSet
+      EventDestination:
+        Name: SnsFeedbackDestination
+        Enabled: true
+        MatchingEventTypes:
+          - bounce
+          - complaint
+          - delivery
+        SnsDestination:
+          TopicARN: !Ref SnsTopic
+  HttpsTopicSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !Sub https://bauns.net/api/notify?token=${Token}
+      Protocol: https
+      TopicArn: !Ref SnsTopic
